@@ -49,8 +49,8 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const { Sun, RotateCcw, Leaf, MessageCircle, Info, Star, Sparkles, Moon } = lucide;
-
+        // 【修正1】以下の lucide の行を丸ごと「削除」します
+        
         const TAROT_DECK = [
             { id: 0, name: "愚者 (The Fool)", keywordUp: "自由、型破り、無邪気", keywordRev: "軽率、無計画、現実逃避", desc: "新しい始まりや未知への冒険を示唆しています。心の赴くままに進む時期です。" },
             { id: 1, name: "魔術師 (The Magician)", keywordUp: "創造、自信、可能性", keywordRev: "スランプ、消極的、無気力", desc: "準備は整いました。あなたの持つスキルやアイデアを現実にする力が備わっています。" },
@@ -131,7 +131,8 @@
                                     </button>
                                     {appState === 'reading' && (
                                         <button onClick={resetReading} className="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-900 border border-emerald-700">
-                                            <RotateCcw size={20} />
+                                            {/* 【修正2】RotateCcw を spanタグの絵文字に書き換えます */}
+                                            <span className="text-xl">↩️</span>
                                         </button>
                                     )}
                                 </div>
