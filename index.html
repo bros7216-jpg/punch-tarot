@@ -8,7 +8,6 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
         body { font-family: 'Noto Sans JP', sans-serif; }
@@ -22,17 +21,28 @@
         }
         .animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; }
         .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(249, 115, 22, 0.5);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(249, 115, 22, 0.8);
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-
-        // 提供されたFirebaseコンフィグ
         const firebaseConfig = {
             apiKey: "AIzaSyCIfXRil7SiIyp1ym0K4mLqXcaC2wuwaYY",
             authDomain: "ichikawa-punch-tarot.firebaseapp.com",
@@ -41,39 +51,165 @@
             messagingSenderId: "631798648873",
             appId: "1:631798648873:web:edb705c8fd9608bd488c38"
         };
-
-        // Firebaseの初期化
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
     </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        // 【修正1】以下の lucide の行を丸ごと「削除」します
-        
+
+        // 改良版：ぬいぐるみを可愛く抱っこするパンチ君
+        const PunchKunWithPlushie = ({ size = 'large' }) => {
+            const scale = size === 'small' ? 0.45 : size === 'medium' ? 0.65 : 1.2;
+            const containerClass = size === 'small' ? 'w-12 h-12' : size === 'medium' ? 'w-20 h-20' : 'w-48 h-48 md:w-56 md:h-56';
+
+            return (
+                <div className={`relative flex items-center justify-center ${containerClass} transition-transform hover:scale-105 duration-300`}>
+                    <div style={{ transform: `scale(${scale})`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        
+                        {/* 1. パンチ君本体 (ベース) */}
+                        <div className="text-[100px] leading-none select-none z-10" style={{ filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.2))' }}>
+                            🐒
+                        </div>
+
+                        {/* 2. 赤いぬいぐるみ (SVG) - パンチ君の腕の間に挟まっているような位置に配置 */}
+                        <div className="absolute z-20 pointer-events-none" style={{ top: '42px', left: '26px', transform: 'rotate(-8deg)' }}>
+                            <svg width="65" height="65" viewBox="0 0 100 100">
+                                {/* 胴体 */}
+                                <circle cx="50" cy="55" r="32" fill="#d32f2f" />
+                                {/* 頭 */}
+                                <circle cx="50" cy="30" r="24" fill="#d32f2f" />
+                                {/* 顔パーツ */}
+                                <ellipse cx="50" cy="34" rx="16" ry="13" fill="#ef9a9a" />
+                                <circle cx="43" cy="30" r="3" fill="#3e2723" />
+                                <circle cx="57" cy="30" r="3" fill="#3e2723" />
+                                {/* 手足（パンチ君の体に少し重なるように） */}
+                                <rect x="10" y="40" width="30" height="12" rx="6" fill="#d32f2f" transform="rotate(-40 10 40)" />
+                                <rect x="60" y="40" width="30" height="12" rx="6" fill="#d32f2f" transform="rotate(40 90 40)" />
+                                <rect x="25" y="75" width="22" height="12" rx="6" fill="#d32f2f" transform="rotate(80 25 75)" />
+                                <rect x="53" y="75" width="22" height="12" rx="6" fill="#d32f2f" transform="rotate(-80 75 75)" />
+                            </svg>
+                        </div>
+
+                        {/* 3. 前面に来るパンチ君の「腕」の部分を補完 (絵文字を薄く重ねて奥行きを出す) */}
+                        <div className="absolute z-30 pointer-events-none text-[100px] leading-none opacity-20" style={{ clipPath: 'inset(45% 0 0 0)' }}>
+                            🐒
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const TAROT_DECK = [
-            { id: 0, name: "愚者 (The Fool)", keywordUp: "自由、型破り、無邪気", keywordRev: "軽率、無計画、現実逃避", desc: "新しい始まりや未知への冒険を示唆しています。心の赴くままに進む時期です。" },
-            { id: 1, name: "魔術師 (The Magician)", keywordUp: "創造、自信、可能性", keywordRev: "スランプ、消極的、無気力", desc: "準備は整いました。あなたの持つスキルやアイデアを現実にする力が備わっています。" },
-            { id: 2, name: "女教皇 (The High Priestess)", keywordUp: "直感、知性、精神性", keywordRev: "悲観、神経質、現実逃避", desc: "自分の内なる声や直感に耳を傾けてください。隠された真実が見えてくるでしょう。" },
-            { id: 3, name: "女帝 (The Empress)", keywordUp: "豊穣、母性、愛情", keywordRev: "依存、嫉妬、過保護", desc: "愛と豊かさに満ちた時期です。感覚的な喜びや創造性が高まっています。" },
-            { id: 4, name: "皇帝 (The Emperor)", keywordUp: "責任、リーダーシップ、安定", keywordRev: "傲慢、頑固、支配的", desc: "論理的な思考と強い意志が求められます。基盤を固め、リーダーシップを発揮する時です。" },
-            { id: 5, name: "教皇 (The Hierophant)", keywordUp: "伝統、ルール、助言", keywordRev: "束縛、孤立、保守的", desc: "伝統や秩序を重んじ、信頼できる人からの助言や教えを大切にしてください。" },
-            { id: 6, name: "恋人 (The Lovers)", keywordUp: "選択、調和、情熱", keywordRev: "誘惑、不和、優柔不断", desc: "重要な選択の時、あるいは深い絆や共感による調和が訪れることを示しています。" },
-            { id: 7, name: "戦車 (The Chariot)", keywordUp: "勝利、前進、コントロール", keywordRev: "暴走、挫折、自己中心", desc: "困難を乗り越え、強い意志で目標に向かって前進する力がみなぎっています。" },
-            { id: 8, name: "力 (Strength)", keywordUp: "忍耐、勇気、思いやり", keywordRev: "力不足、臆病、感情的", desc: "力ずくではなく、優しさと忍耐力で内なる獣（感情）をコントロールする強さです。" },
-            { id: 9, name: "隠者 (The Hermit)", keywordUp: "内省、探求、単独行動", keywordRev: "孤独、閉鎖的、現実逃避", desc: "外の世界から少し離れ、自分自身の内面と深く向き合う時間が必要です。" },
-            { id: 10, name: "運命の輪 (Wheel of Fortune)", keywordUp: "転機、チャンス、運命", keywordRev: "すれ違い、不運、停滞", desc: "思いがけないチャンスや、抗えない運命の流れが訪れます。変化を受け入れましょう。" },
-            { id: 11, name: "正義 (Justice)", keywordUp: "バランス、公平、決断", keywordRev: "不公平、偏見、優柔不断", desc: "感情に流されず、客観的で公平な判断が求められています。因果応報の暗示も。" },
-            { id: 12, name: "吊るされた男 (The Hanged Man)", keywordUp: "試練、視点の変化、自己犠牲", keywordRev: "徒労、執着、自己中心", desc: "今は身動きが取れないかもしれませんが、別の視点から物事を見るための重要な期間です。" },
-            { id: 13, name: "死神 (Death)", keywordUp: "終焉、再生、リセット", keywordRev: "未練、停滞、変化への恐怖", desc: "一つの終わりと、新しい始まり。古いものを手放すことで新しい道が開かれます。" },
-            { id: 14, name: "節制 (Temperance)", keywordUp: "調和、順応、浄化", keywordRev: "不均衡、浪費、無節操", desc: "異なるものをうまく混ぜ合わせ、ちょうど良いバランスと調和を見つける時です。" },
-            { id: 15, name: "悪魔 (The Devil)", keywordUp: "欲望、執着、誘惑", keywordRev: "解放、回復、執着を手放す", desc: "物質的な欲望や、断ち切れない執着にとらわれていませんか？自分を見つめ直す警告です。" },
-            { id: 16, name: "塔 (The Tower)", keywordUp: "崩壊、アクシデント、解放", keywordRev: "緊迫、不幸、混乱", desc: "突然のトラブルや価値観の崩壊。しかし、それは不要なものを壊すための浄化でもあります。" },
-            { id: 17, name: "星 (The Star)", keywordUp: "希望、インスピレーション、理想", keywordRev: "失望、悲観、無気力", desc: "暗闇の中に輝く希望の星。インスピレーションに従い、明るい未来を信じてください。" },
-            { id: 18, name: "月 (The Moon)", keywordUp: "不安、迷い、潜在意識", keywordRev: "不安の解消、現実を見る", desc: "見えないものへの不安や迷い。今は無理に動かず、直感に従いながら夜明けを待ちましょう。" },
-            { id: 19, name: "太陽 (The Sun)", keywordUp: "成功、喜び、活力", keywordRev: "延期、不調、エネルギー不足", desc: "生命力に満ち溢れ、努力が実を結ぶ明るい兆し。純粋な喜びを感じてください。" },
-            { id: 20, name: "審判 (Judgement)", keywordUp: "復活、覚醒、結果", keywordRev: "後悔、挫折、未練", desc: "過去の行いに対する結果が出ます。あきらめかけていたことの復活や、新たな覚醒の時。" },
-            { id: 21, name: "世界 (The World)", keywordUp: "完成、成就、完全", keywordRev: "未完成、中途半端、停滞", desc: "一つのサイクルが完璧な形で完了しました。大いなる達成と、次への準備のステージです。" }
+            { 
+                id: 0, name: "愚者 (The Fool)", keywordUp: "自由、型破り、無邪気、始まり", keywordRev: "軽率、無計画、現実逃避、中途半端", 
+                descUp: "【本質】\n新しい始まりや未知への冒険を示唆しているウキ！心の赴くままに一歩を踏み出す時期だよ。\n【対人・恋愛】\n肩の力を抜いて自然体で接すると良いご縁が繋がりそう。型にはまらない関係が吉ウキ！\n【仕事・学業】\n常識にとらわれない斬新なアイデアが評価されるかも。思いつきを大切にしてみて。\n【パンチ君の助言】\n「失敗を恐れないで！今は自由な心を楽しむウキ！バナナを持って旅に出よう！」",
+                descRev: "【本質】\n少し無計画になっていないか注意が必要ウキ。自由と無責任は違うから気をつけて。\n【対人・恋愛】\nその場のノリだけで動くと後悔するかも。相手の気持ちもちゃんと考えるウキよ。\n【仕事・学業】\n準備不足のまま見切り発車するのは危険！もう一度しっかり計画を立て直してみて。\n【パンチ君の助言】\n「地に足をつけることも大事ウキ！周りをよく見てからジャンプするんだ！」" 
+            },
+            { 
+                id: 1, name: "魔術師 (The Magician)", keywordUp: "創造、自信、可能性、集中", keywordRev: "スランプ、消極的、無気力、悪知恵", 
+                descUp: "【本質】\n準備は整ったウキ！キミの持つスキルやアイデアを現実にする力が備わっているよ。\n【対人・恋愛】\n積極的なアプローチが鍵になるウキ。コミュニケーション能力が高まっているので楽しく話せるはず！\n【仕事・学業】\n新しいプロジェクトや勉強を始めるのに最高のタイミング。自信を持って取り組んで。\n【パンチ君の助言】\n「キミには何でも生み出せる魔法の力があるウキ！まずは手を動かしてみるんだ！」",
+                descRev: "【本質】\n自信を失ったり、やる気が出なくて立ち止まっていないウキ？少しスランプ気味かも。\n【対人・恋愛】\n自分の気持ちをうまく伝えられず、すれ違いが起きやすい時期。焦らず言葉を選んで。\n【仕事・学業】\n知識や道具が揃っているのに、活かしきれていないみたい。基本に立ち返ってみよう。\n【パンチ君の助言】\n「今は無理に魔法を使おうとしなくていいウキ。美味しいものを食べてエネルギーをチャージしよう！」" 
+            },
+            { 
+                id: 2, name: "女教皇 (The High Priestess)", keywordUp: "直感、知性、精神性、静寂", keywordRev: "悲観、神経質、現実逃避、冷酷", 
+                descUp: "【本質】\n直感や精神性が高まっているウキ。表面的なことより、隠された真実を見極める時期だよ。\n【対人・恋愛】\n焦って答えを出さず、相手をじっくり観察してみて。精神的な繋がりが深まる予感ウキ。\n【仕事・学業】\n冷静な分析力と集中力が冴え渡っているよ。今は勉強や研究に没頭すると大きな成果が出るウキ。\n【パンチ君の助言】\n「自分の内なる声に耳を澄ませてみて。答えはすでにキミの中にあるウキよ！」",
+                descRev: "【本質】\n少し神経質になっていて、直感が鈍っているかもしれないウキ。考えすぎに注意！\n【対人・恋愛】\n相手の言葉の裏を読もうとしすぎて疑心暗鬼になっていない？もっとリラックスして。\n【仕事・学業】\n知識に固執しすぎて、柔軟な発想ができなくなっているかも。頭を柔らかくしてウキ。\n【パンチ君の助言】\n「白黒つけるだけが正解じゃないウキよ。曖昧なことも受け入れる心のゆとりを持とう！」" 
+            },
+            { 
+                id: 3, name: "女帝 (The Empress)", keywordUp: "豊穣、母性、愛情、繁栄", keywordRev: "依存、嫉妬、過保護、浪費", 
+                descUp: "【本質】\n愛と豊かさに満ちた素晴らしい時期ウキ！感覚的な喜びや創造性が高まっているよ。\n【対人・恋愛】\n母性的な優しさが魅力になる時。思いやりを持って接すれば、温かい関係が築けるウキ。\n【仕事・学業】\nこれまでの努力が実を結び、豊かな成果を手に入れられるよ。充実感に包まれるはず！\n【パンチ君の助言】\n「美しいものに触れたり、美味しいものを食べたりして、今の豊かさをたっぷり味わうウキ！」",
+                descRev: "【本質】\n少し甘えが出たり、ルーズになっているかも。過保護や依存に気をつけるウキ。\n【対人・恋愛】\n相手を束縛したり、嫉妬心が強くなっていない？お互いの自立も大切にするウキよ。\n【仕事・学業】\n怠け心が出て、やるべきことを後回しにしがち。メリハリをつけて取り組んでみて。\n【パンチ君の助言】\n「自分を甘やかすのも大事だけど、やりすぎは禁物ウキ！少しシャキッと背筋を伸ばそう！」" 
+            },
+            { 
+                id: 4, name: "皇帝 (The Emperor)", keywordUp: "責任、リーダー、安定、権力", keywordRev: "傲慢、頑固、支配的、無責任", 
+                descUp: "【本質】\n論理的な思考と強い意志が求められているウキ。基盤を固め、リーダーシップを発揮する時だよ。\n【対人・恋愛】\n頼りがいのある態度が信頼を生むウキ。誠実で責任感のある行動を心がけてみて。\n【仕事・学業】\n目標に向かって計画通りに進められる時期。キミの決断力が高く評価されるはずだよ。\n【パンチ君の助言】\n「迷わず堂々と進むウキ！キミがみんなを引っ張っていくリーダーになるんだ！」",
+                descRev: "【本質】\n少し頑固になったり、自分の意見を押し付けすぎているかもしれないウキ。\n【対人・恋愛】\n相手をコントロールしようとしていない？相手の気持ちに寄り添うことも大切ウキよ。\n【仕事・学業】\n責任の重さにプレッシャーを感じているかも。一人で抱え込まずに周りを頼ってみて。\n【パンチ君の助言】\n「北風より太陽ウキ！力で押すだけでなく、優しさで包み込む余裕を持ってね！」" 
+            },
+            { 
+                id: 5, name: "教皇 (The Hierophant)", keywordUp: "伝統、ルール、助言、慈悲", keywordRev: "束縛、孤立、保守的、お節介", 
+                descUp: "【本質】\n伝統や秩序を重んじ、信頼できる人からの助言や教えを大切にする時期ウキ。\n【対人・恋愛】\n誠実で精神的な結びつきを大切にする関係が吉。尊敬できる相手との出会いがあるかも。\n【仕事・学業】\nルールを守り、基礎をしっかり固めることが成功への近道ウキ。目上の人からのアドバイスを聞こう。\n【パンチ君の助言】\n「一人で悩むより、頼りになる先生や先輩に相談してみて！きっと良い道しるべをくれるウキ！」",
+                descRev: "【本質】\n古いルールや常識に縛られて、窮屈さを感じているかもしれないウキ。\n【対人・恋愛】\nお節介になりすぎたり、価値観を押し付けていない？相手の自由を尊重してあげて。\n【仕事・学業】\nマニュアル通りにしか動けず、応用が利かなくなっているかも。少し見方を変えてみて。\n【パンチ君の助言】\n「時には型を破る勇気も必要ウキ！キミ自身の考えを信じて進んでみるんだ！」" 
+            },
+            { 
+                id: 6, name: "恋人 (The Lovers)", keywordUp: "選択、調和、情熱、共感", keywordRev: "誘惑、不和、優優不断、失恋", 
+                descUp: "【本質】\n重要な選択の時、あるいは深い絆や共感による調和が訪れることを示しているウキ！\n【対人・恋愛】\n心から惹かれ合う素敵な出会いや、パートナーとの関係がさらに深まる最高の時期だよ。\n【仕事・学業】\n本当にやりたいこと、情熱を傾けられるものに出会えるかも。直感で選んでみて。\n【パンチ君の助言】\n「頭で考えるより、心が『ウキウキ！』する方を選ぶのが一番の正解だよ！」",
+                descRev: "【本質】\n迷いや優柔不断が生じて、なかなか決断できない状態かもしれないウキ。\n【対人・恋愛】\n誘惑に流されたり、コミュニケーション不足ですれ違いが起きやすい時期。誠実さを大切に。\n【仕事・学業】\n集中力が散漫になりがち。優先順位をつけて、一つずつ片付けていくウキよ。\n【パンチ君の助言】\n「二兎を追う者は一兎をも得ずウキ！本当に大切なものは何か、しっかり見極めるんだ！」" 
+            },
+            { 
+                id: 7, name: "戦車 (The Chariot)", keywordUp: "勝利、前進、コントロール、克服", keywordRev: "暴走、挫折、自己中心、敗北", 
+                descUp: "【本質】\n困難を乗り越え、強い意志で目標に向かって前進する力がみなぎっているウキ！\n【対人・恋愛】\n待っているより、自分から積極的に行動を起こすことで道が開けるよ。勇気を出して！\n【仕事・学業】\nスピーディーな決断と行動が成功を引き寄せるウキ。ライバルにも勝てる勢いがあるよ。\n【パンチ君の助言】\n「今はアクセル全開で進む時ウキ！キミの情熱でどんな壁も突破できるよ！」",
+                descRev: "【本質】\n感情のコントロールが効かなくなって、少し暴走気味かもしれないウキ。\n【対人・恋愛】\n強引になりすぎて相手を置いてけぼりにしているかも。少し立ち止まって相手のペースを見て。\n【仕事・学業】\n焦ってミスをしたり、途中で挫折しやすくなっているよ。一度深呼吸して計画を見直そう。\n【パンチ君の助言】\n「スピードよりハンドリングが大事ウキ！周りを見る余裕を取り戻して！」" 
+            },
+            { 
+                id: 8, name: "力 (Strength)", keywordUp: "忍耐、勇気、思いやり、信念", keywordRev: "力不足、臆病、感情的、甘え", 
+                descUp: "【本質】\n力ずくではなく、優しさと忍耐力で感情をコントロールする本当の強さを示すウキ。\n【対人・恋愛】\n思いやりを持って相手に寄り添うことで、どんな困難な関係も修復できるよ。\n【仕事・学業】\nすぐには結果が出なくても、粘り強く努力を続けることで必ず大きな成果に繋がるウキ。\n【パンチ君の助言】\n「本物の強さは優しさから生まれるウキ！キミの温かい心で困難を包み込むんだ！」",
+                descRev: "【本質】\n自信を失って臆病になったり、逆に感情を爆発させてしまう危険があるウキ。\n【対人・恋愛】\n相手に依存しすぎたり、わがままになっていない？自分の感情を自分でコントロールして。\n【仕事・学業】\n気力や体力が低下していて、諦めムードが漂っているかも。無理せず少し休んで。\n【パンチ君の助言】\n「無理に強がる必要はないウキ。まずは疲れた心をゆっくり癒やしてあげよう！」" 
+            },
+            { 
+                id: 9, name: "隠者 (The Hermit)", keywordUp: "内省、探求、単独行動、悟り", keywordRev: "孤独、閉鎖的、現実逃避、偏屈", 
+                descUp: "【本質】\n外の世界から少し離れ、自分自身の内面と深く向き合う大切な時間ウキ。\n【対人・恋愛】\n今は無理に人とワイワイするより、一人静かに自分の本当の気持ちを探るのが良いかも。\n【仕事・学業】\n深く専門的な知識を追求するのに最適な時期。コツコツと探求を続けてみて。\n【パンチ君の助言】\n「暗闇を照らすランタンのように、キミの心の奥にある真実の光を見つけるウキ！」",
+                descRev: "【本質】\n殻に閉じこもりすぎて、孤独感や孤立を深めてしまっているかもしれないウキ。\n【対人・恋愛】\n心を閉ざして、せっかくの好意を遠ざけていない？少しだけ外の世界に目を向けてみて。\n【仕事・学業】\nこだわりが強すぎて、周りとの協調性が失われているかも。他人の意見も聞いてみよう。\n【パンチ君の助言】\n「一人の時間も大事だけど、誰かと一緒に食べるバナナも美味しいウキよ！」" 
+            },
+            { 
+                id: 10, name: "運命の輪 (Wheel of Fortune)", keywordUp: "転機、チャンス、運命、好転", keywordRev: "すれ違い、不運、停滞、悪化", 
+                descUp: "【本質】\n思いがけないチャンスや、抗えない運命の良い流れが訪れているウキ！\n【対人・恋愛】\n運命的な出会いや、トントン拍子に進展する出来事があるかも。タイミングを逃さないで！\n【仕事・学業】\nこれまでの状況が好転する転機がやってくるよ。変化を恐れず波に乗るのが正解ウキ。\n【パンチ君の助言】\n「運命のルーレットが回り始めたウキ！直感を信じてチャンスを掴み取って！」",
+                descRev: "【本質】\nタイミングが悪く、物事がスムーズに進まない停滞期に入っているかもしれないウキ。\n【対人・恋愛】\nすれ違いが多くなったり、状況が不利に働いたりしがち. 今は無理に動かない方が無難かも。\n【仕事・学業】\n予想外のトラブルで計画が遅れる可能性があるウキ。焦らず次のチャンスを待とう。\n【パンチ君の助言】\n「流れが悪い時は、ジタバタせずに力を蓄えるウキ！必ずまた良い波はやってくるよ！」" 
+            },
+            { 
+                id: 11, name: "正義 (Justice)", keywordUp: "バランス、公平、決断、誠実", keywordRev: "不公平、偏見、優優不断、不正", 
+                descUp: "【本質】\n感情に流されず、客観的で公平な判断が求められているウキ。因果応報の暗示もあるよ。\n【対人・恋愛】\n対等で誠実な関係が築ける時期。お互いのバランスを大切にすると上手くいくウキ。\n【仕事・学業】\n正しい行いがきちんと評価されるよ。ルールを守り、誠実に仕事に取り組んでみて。\n【パンチ君の助言】\n「キミの心の中にある天秤をまっすぐ保つウキ！正しいと思う道を堂々と進んでね！」",
+                descRev: "【本質】\n偏見や不公平な扱いを受けていると感じたり、判断力が鈍っているかもしれないウキ。\n【対人・恋愛】\nどちらかが我慢する不均衡な関係になっていない？フェアじゃないと感じたら見直しを。\n【仕事・学業】\n不正やルール違反は必ずバレるウキよ。ズルをせず、もう一度正々堂々とやり直して。\n【パンチ君の助言】\n「自分にも他人にも嘘をつかないことウキ。誠実さが一番の解決策になるよ！」" 
+            },
+            { 
+                id: 12, name: "吊るされた男 (The Hanged Man)", keywordUp: "試練、視点の変化、自己犠牲、奉仕", keywordRev: "徒労、執着、自己中心、骨折り損", 
+                descUp: "【本質】\n今は身動きが取れないかもしれないけれど、別の視点から物事を見るための重要な期間ウキ。\n【対人・恋愛】\n相手のために尽くす自己犠牲が、後々良い結果をもたらすよ。見返りを求めない優しさを。\n【仕事・学業】\n行き詰まっているように見えて、実は大きな気付きを得るための修行期間ウキ。\n【パンチ君の助言】\n「逆さまから世界を見てごらん！今まで気づかなかった新しい発見があるはずウキ！」",
+                descRev: "【本質】\n努力が報われず、無駄骨に終わる徒労感を感じているかもしれないウキ。\n【対人・恋愛】\n尽くしても感謝されず、不満が溜まっていそう。自分をすり減らす関係は見直す時期かも。\n【仕事・学業】\n執着心から抜け出せず、間違った方向にエネルギーを注いでいるよ。やり方を根本から変えて。\n【パンチ君の助言】\n「我慢の限界なら、我慢しなくていいウキ！自分を縛り付けている紐をほどいて！」" 
+            },
+            { 
+                id: 13, name: "死神 (Death)", keywordUp: "終焉、再生、リセット、転換", keywordRev: "未練、停滞、変化への恐怖、惰性", 
+                descUp: "【本質】\n一つの終わりと新しい始まりウキ。古いものを手放すことで新しい道が開かれるよ。\n【対人・恋愛】\n腐れ縁や未練を断ち切るタイミング。別れは辛くても、それが新しい幸せへの第一歩になるよ。\n【仕事・学業】\nこれまでのやり方を白紙に戻して、ゼロからリセットする勇気を持つと大きな飛躍に繋がるウキ。\n【パンチ君の助言】\n「古い葉っぱが落ちて、新しい芽が出るウキ！変化を恐れずに受け入れて！」",
+                descRev: "【本質】\n終わるべきものを終わらせられず、中途半端に停滞している状態ウキ。\n【対人・恋愛】\n過去の未練にしがみついて、新しい出会いを逃しているかも。少しずつ前を向いて。\n【仕事・学業】\n惰性で続けていることに限界が来ているよ。思い切った改革が必要な時期ウキ。\n【パンチ君の助言】\n「手放すのは怖いけど、両手が塞がっていたら新しいバナナは受け取れないウキよ！」" 
+            },
+            { 
+                id: 14, name: "節制 (Temperance)", keywordUp: "調和、順応、浄化、自然体", keywordRev: "不均衡、浪費、無節操、不摂生", 
+                descUp: "【本質】\n異なるものをうまく混ぜ合わせ、ちょうど良いバランスと調和を見つける時期ウキ。\n【対人・恋愛】\nお互いの違いを認め合い、自然体で付き合える穏やかな関係が育っていくよ。\n【仕事・学業】\n新しい環境や変化にもスムーズに順応できるウキ。無理のないペースで進めてみて。\n【パンチ君の助言】\n「熱すぎず冷たすぎず、ちょうどいい『ぬるま湯』の心地よさを楽しむウキ！」",
+                descRev: "【本質】\n生活リズムが崩れたり、極端な行動に走ったりと、不均衡が生じているウキ。\n【対人・恋愛】\n相手に合わせすぎて疲れたり、逆にワガママを言い過ぎたり。バランスを崩しているかも。\n【仕事・学業】\n無駄遣いや時間の浪費に気をつけて。不摂生な生活がパフォーマンスを落としているウキよ。\n【パンチ君の助言】\n「やりすぎ・やらなすぎは禁物ウキ！まずは生活のペースを整えてみて！」" 
+            },
+            { 
+                id: 15, name: "悪魔 (The Devil)", keywordUp: "欲望、執着、誘惑、束縛", keywordRev: "解放、回復、執着を手放す、決別", 
+                descUp: "【本質】\n物質的な欲望や、断ち切れない執着にとらわれていないか見つめ直す警告ウキ。\n【対人・恋愛】\n依存心や嫉妬、体だけの関係など、不健全な繋がりから抜け出せなくなっているかも。\n【仕事・学業】\n目先の利益や誘惑に負けて、大切なことを見失いそう。甘い話には裏があるウキよ。\n【パンチ君の助言】\n「キミを縛っている鎖は、実は簡単に外せるウキ！誘惑に『NO』と言う勇気を持って！」",
+                descRev: "【本質】\n悪い習慣や執着からようやく解放され、回復に向かう兆しが見えているウキ！\n【対人・恋愛】\n腐れ縁を断ち切り、健全な自分を取り戻せる時。過去の呪縛から解き放たれるよ。\n【仕事・学業】\n悪循環を断ち切り、正しい方向へ軌道修正できるウキ。反省を活かしてリスタートしよう。\n【パンチ君の助言】\n「よく頑張って誘惑を振り払ったウキ！すっきりした心で新しい一歩を踏み出そう！」" 
+            },
+            { 
+                id: 16, name: "塔 (The Tower)", keywordUp: "崩壊、アクシデント、解放、浄化", keywordRev: "緊迫、不幸、混乱、災難回避", 
+                descUp: "【本質】\n突然のトラブルや価値観の崩壊。でもそれは、不要なものを壊すための浄化でもあるウキ。\n【対人・恋愛】\nショックな出来事や喧嘩が起きるかも。でも、隠されていた問題が表面化してスッキリするよ。\n【仕事・学業】\n予想外のハプニングで計画が白紙に。でも、古いやり方を根本から変える大チャンスウキ！\n【パンチ君の助言】\n「壊れた積み木は、もっと高く積み直せるウキ！ショックを受けすぎず前を向いて！」",
+                descRev: "【本質】\nじわじわと崩れゆく状況に不安を感じたり、ギリギリでトラブルを回避できたりするウキ。\n【対人・恋愛】\n少しずつ関係にヒビが入っているかも。完全に壊れる前に、しっかり話し合って。\n【仕事・学業】\n見て見ぬふりをしてきた問題が限界に近づいているよ。早めに火種を消しておくウキ。\n【パンチ君の助言】\n「グラグラしている柱をそのままにしちゃダメウキ！早めの修理が身を助けるよ！」" 
+            },
+            { 
+                id: 17, name: "星 (The Star)", keywordUp: "希望、インスピレーション、理想、願い", keywordRev: "失望、悲観、無気力、理想高すぎ", 
+                descUp: "【本質】\n暗闇の中に輝く希望の星！インスピレーションに従い、明るい未来を信じる時期ウキ。\n【対人・恋愛】\n理想的な相手との出会いや、ピュアな気持ちで心を通い合わせられる素晴らしい兆し。\n【仕事・学業】\nキミの才能やアイデアがキラキラ輝くよ。目標に向かってポジティブに進んで大丈夫ウキ！\n【パンチ君の助言】\n「キミの頭上には希望の星が輝いているウキ！願いをかけて、まっすぐ進んでね！」",
+                descRev: "【本質】\n理想が高すぎて現実とのギャップに失望したり、無気力になっているかもしれないウキ。\n【対人・恋愛】\n相手に多くを求めすぎて幻滅していない？少しハードルを下げて、現実を見てみて。\n【仕事・学業】\n目標を見失い、モチベーションが下がっているかも。小さな目標からやり直してみよう。\n【パンチ君の助言】\n「星が見えない夜もあるウキ。でも、雲の上には必ず星があることを忘れないで！」" 
+            },
+            { 
+                id: 18, name: "月 (The Moon)", keywordUp: "不安、迷い、潜在意識、幻想", keywordRev: "不安の解消、現実を見る、夜明け", 
+                descUp: "【本質】\n見えないものへの不安や迷い。今は無理に動かず、直感に従いながら夜明けを待つ時期ウキ。\n【対人・恋愛】\n相手の本心が分からず、疑心暗鬼になりがち. 妄想で不安を膨らませないように気をつけて。\n【仕事・学業】\n状況が不透明で、先行きが見えないかも。重要な決断は一旦保留にして、情報収集をウキ。\n【パンチ君の助言】\n「夜道で怯えることはないウキ！夜が明ければ、不安の正体はただの木の影だと分かるよ！」",
+                descRev: "【本質】\n徐々に霧が晴れ、不安が解消されて現実がはっきり見えてくる兆しウキ！\n【対人・恋愛】\n誤解が解けたり、隠されていた真実が明らかになって、スッキリとした気持ちになれるよ。\n【仕事・学業】\n迷いが消えて、次にやるべきことが明確になるウキ。少しずつ行動を始めてみて。\n【パンチ君の助言】\n「もうすぐ夜明けウキ！不安な気持ちは朝露と一緒に乾いて消えていくよ！」" 
+            },
+            { 
+                id: 19, name: "太陽 (The Sun)", keywordUp: "成功、喜び、活力、祝福", keywordRev: "延期、不調、エネルギー不足、油断", 
+                descUp: "【本質】\n生命力に満ち溢れ、努力が実を結ぶ明るい兆しウキ！純粋な喜びを感じて。\n【対人・恋愛】\n隠し事のないオープンで楽しい関係が築けるよ。笑顔が最高の魅力を引き出してくれるウキ。\n【仕事・学業】\n大成功の暗示！これまでの頑張りが正当に評価され、周囲からも祝福されるはず。\n【パンチ君の助言】\n「太陽の光をいっぱい浴びて、元気いっぱいに飛び跳ねるウキ！おめでとう！」",
+                descRev: "【本質】\nせっかくの成功が少し延期になったり、エネルギー不足で不調を感じているかもしれないウキ。\n【対人・恋愛】\n少しワガママになったり、相手への配慮が欠けているかも。思いやりを思い出して。\n【仕事・学業】\nあと一歩のところで油断してミスをする可能性が. 最後まで気を抜かずにやり遂げるウキよ。\n【パンチ君の助言】\n「太陽は雲に隠れているだけウキ！少し休んでエネルギーをチャージすればまた輝くよ！」" 
+            },
+            { 
+                id: 20, name: "審判 (Judgement)", keywordUp: "復活、覚醒、結果、再挑戦", keywordRev: "後悔、挫折、未練、消極的", 
+                descUp: "【本質】\n過去の行いに対する結果が出る時。あきらめかけていたことの復活や、新たな覚醒ウキ！\n【対人・恋愛】\n復縁のチャンスや、一度諦めた恋が再び動き出す予感。過去のわだかまりも解けるよ。\n【仕事・学業】\n敗者復活のチャンス！過去の失敗を活かして、見事な再チャレンジを果たせるウキ。\n【パンチ君の助言】\n「目覚めのラッパが鳴り響いているウキ！過去を乗り越えて新しいキミに生まれ変わろう！」",
+                descRev: "【本質】\n過去の失敗や後悔を引きずって、前に進めずにいる状態かもしれないウキ。\n【対人・恋愛】\n終わった関係に未練を残したり、過去の過ちを許せずに苦しんでいるかも。\n【仕事・学業】\n再挑戦する勇気が出ず、チャンスを逃してしまいそう。自分を信じきれていないウキ。\n【パンチ君の助言】\n「いつまでも後ろを振り返っていても、バナナは落ちていないウキ！前を向くんだ！」" 
+            },
+            { 
+                id: 21, name: "世界 (The World)", keywordUp: "完成、成就、完全、大団円", keywordRev: "未完成、中途半端、停滞、マンネリ", 
+                descUp: "【本質】\n一つのサイクルが完璧な形で完了したウキ！大いなる達成と、次への準備のステージだよ。\n【対人・恋愛】\nこれ以上ない最高の関係に到達できる暗示。心からの満たされた喜びを感じられるウキ。\n【仕事・学業】\n目標を完璧に達成し、集大成を迎えられるよ。周囲からの賞賛を素直に受け取って。\n【パンチ君の助言】\n「パーフェクトだウキ！今のキミは最高の輝きを放っているよ！思いっきり喜んで！」",
+                descRev: "【本質】\nあと少しのところで完成に至らず、中途半端や停滞を感じているかもしれないウキ。\n【対人・恋愛】\nマンネリを感じたり、どこか物足りなさを感じているかも。少しスパイスが必要ウキね。\n【仕事・学業】\nツメが甘くて未完成のまま終わらせてしまいそう。最後まで丁寧に仕上げるよう心がけて。\n【パンチ君の助言】\n「パズルは最後のピースをはめるまで終わらないウキ！あと少しだけ粘り強く頑張って！」" 
+            }
         ];
 
         function App() {
@@ -109,30 +245,28 @@
             };
 
             return (
-                <div className="min-h-screen bg-emerald-950 text-emerald-50 selection:bg-orange-500 selection:text-white pb-20">
+                <div className="min-h-screen bg-emerald-950 text-emerald-50 pb-20 overflow-x-hidden">
                     <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-800/40 via-emerald-950 to-green-950 -z-10" />
                     
                     <header className="border-b border-emerald-800/50 bg-emerald-950/90 backdrop-blur-md sticky top-0 z-50 shadow-lg">
                         <div className="max-w-5xl mx-auto px-4 py-3">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-2 cursor-pointer" onClick={resetReading}>
-                                    <span className="text-3xl">🐒</span>
+                                <div className="flex items-center gap-3 cursor-pointer" onClick={resetReading}>
+                                    <PunchKunWithPlushie size="small" />
                                     <h1 className="text-xl md:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-amber-500">
                                         パンチ君のタロット啓示
                                     </h1>
                                 </div>
-
-                                <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto w-full sm:w-auto justify-center">
-                                    <button onClick={() => drawCards(1)} disabled={appState === 'drawing'} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-800/60 hover:bg-orange-500 border border-emerald-600/50 transition-all text-sm font-bold shadow-md">
-                                        <span>🍌</span> ワンオラクル
+                                <div className="flex items-center gap-2 sm:gap-4 justify-center">
+                                    <button onClick={() => drawCards(1)} disabled={appState === 'drawing'} className="px-4 py-2 rounded-full bg-emerald-800/60 hover:bg-orange-500 border border-emerald-600/50 transition-all text-sm font-bold shadow-md">
+                                        ワンオラクル 🍌
                                     </button>
-                                    <button onClick={() => drawCards(3)} disabled={appState === 'drawing'} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-800/60 hover:bg-orange-500 border border-emerald-600/50 transition-all text-sm font-bold shadow-md">
-                                        <span>🍌🍌🍌</span> スリーカード
+                                    <button onClick={() => drawCards(3)} disabled={appState === 'drawing'} className="px-4 py-2 rounded-full bg-emerald-800/60 hover:bg-orange-500 border border-emerald-600/50 transition-all text-sm font-bold shadow-md">
+                                        スリーカード 🍌🍌🍌
                                     </button>
                                     {appState === 'reading' && (
                                         <button onClick={resetReading} className="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-900 border border-emerald-700">
-                                            {/* 【修正2】RotateCcw を spanタグの絵文字に書き換えます */}
-                                            <span className="text-xl">↩️</span>
+                                            <span>↩️</span>
                                         </button>
                                     )}
                                 </div>
@@ -143,78 +277,85 @@
                     <main className="max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col items-center">
                         {appState === 'home' && (
                             <div className="text-center animate-fade-in-up mt-10">
-                                <div className="relative inline-block mb-8">
-                                    <div className="text-8xl">🐒</div>
-                                    <div className="absolute -top-4 -right-12 bg-white text-emerald-950 px-4 py-2 rounded-2xl font-bold shadow-lg animate-bounce text-sm">ウキッ！</div>
+                                <div className="relative inline-block mb-10">
+                                    <PunchKunWithPlushie size="large" />
+                                    <div className="absolute top-4 -right-12 bg-white text-emerald-950 px-4 py-2 rounded-2xl rounded-bl-none font-bold shadow-xl animate-bounce text-sm transform rotate-3">
+                                        ウキッ！
+                                    </div>
                                 </div>
-                                <h2 className="text-3xl md:text-4xl font-black text-orange-200 mb-6">運命のバナナを選ぶウキ！</h2>
+                                <h2 className="text-3xl md:text-4xl font-black text-orange-200 mb-6 drop-shadow-md">運命のバナナを選ぶウキ！</h2>
                                 <div className="bg-emerald-900/50 border border-emerald-700/50 rounded-2xl p-8 max-w-lg mx-auto shadow-inner">
-                                    <p className="text-lg leading-relaxed">
+                                    <p className="text-lg leading-relaxed text-emerald-100">
                                         やあ！市川動物園の<strong className="text-orange-300">パンチ君</strong>だウキ！<br/>
-                                        ボクが神秘のタロットでキミを導いてあげるよ。
+                                        お気に入りのぬいぐるみと一緒に、キミの運命を占ってあげるよ。
                                     </p>
                                 </div>
                             </div>
                         )}
 
                         {appState === 'drawing' && (
-                            <div className="flex flex-col items-center justify-center flex-1 animate-pulse mt-20">
+                            <div className="flex flex-col items-center justify-center mt-20 animate-pulse">
                                 <div className="text-7xl mb-6 animate-spin">🍌</div>
-                                <p className="text-2xl font-bold text-orange-200 bg-emerald-900/40 px-8 py-3 rounded-full">まぜまぜしてるウキ...</p>
+                                <p className="text-2xl font-bold text-orange-200">読み取り中ウキ...</p>
                             </div>
                         )}
 
                         {appState === 'reading' && (
-                            <div className="w-full animate-fade-in">
-                                <div className="text-center mb-12">
-                                    <div className="text-5xl mb-4">🐒</div>
-                                    <p className="inline-block text-orange-100 font-bold text-xl bg-gradient-to-r from-orange-600 to-amber-600 px-8 py-3 rounded-full shadow-xl">
-                                        {drawnCards.length === 1 ? "これがキミへの啓示だウキ！🍌" : "過去・現在・未来の啓示だウキ！🍌🍌🍌"}
+                            <div className="w-full animate-fade-in flex flex-col items-center">
+                                <div className="text-center mb-12 flex flex-col items-center">
+                                    <PunchKunWithPlushie size="medium" />
+                                    <p className="mt-4 inline-block text-orange-100 font-bold text-lg bg-orange-600/80 px-8 py-3 rounded-full shadow-lg">
+                                        啓示を受け取るがいいウキ！
                                     </p>
                                 </div>
 
-                                <div className="flex flex-wrap justify-center gap-10">
-                                    {drawnCards.map((card, index) => (
-                                        <div key={index} className="flex flex-col items-center w-full max-w-[280px]">
-                                            <div className="mb-4 font-bold bg-emerald-900/80 px-4 py-1.5 rounded-full border border-emerald-600 text-orange-200">
-                                                {drawnCards.length === 3 ? (index === 0 ? "過去" : index === 1 ? "現在" : "未来") : "結果"}
-                                            </div>
-                                            <div 
-                                                className="relative w-56 h-[22rem] cursor-pointer [perspective:1000px]"
-                                                onClick={() => handleCardClick(index)}
-                                            >
-                                                <div className={`w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${flippedCards[index] ? '[transform:rotateY(180deg)]' : ''}`}>
-                                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-green-700 to-emerald-950 border-2 border-emerald-500/50 flex items-center justify-center [backface-visibility:hidden]">
-                                                        <div className="w-[85%] h-[90%] border-2 border-dashed border-emerald-400/30 rounded-xl flex items-center justify-center">
+                                <div className="flex flex-wrap justify-center gap-10 w-full">
+                                    {drawnCards.map((card, index) => {
+                                        const isFlipped = flippedCards[index];
+                                        return (
+                                            <div key={index} className="flex flex-col items-center w-full max-w-[320px]">
+                                                <div className="mb-4 font-bold bg-emerald-900/80 px-5 py-1.5 rounded-full border border-emerald-600 text-orange-200">
+                                                    {drawnCards.length === 3 ? (index === 0 ? "過去" : index === 1 ? "現在" : "未来") : "本日の運勢"}
+                                                </div>
+                                                <div 
+                                                    className="relative w-56 h-[22rem] cursor-pointer group [perspective:1000px]"
+                                                    onClick={() => handleCardClick(index)}
+                                                >
+                                                    <div className={`w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+                                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-green-700 to-emerald-950 border-2 border-emerald-500/50 flex items-center justify-center [backface-visibility:hidden] shadow-lg">
                                                             <div className="text-4xl opacity-50">🌿</div>
                                                         </div>
+                                                        <div className={`absolute inset-0 rounded-2xl bg-white border-[3px] border-orange-400 p-3 [backface-visibility:hidden] [transform:rotateY(180deg)] text-emerald-950 ${card.isReversed ? 'rotate-180' : ''}`}>
+                                                            <div className="w-full h-full border-2 border-emerald-100 rounded-xl flex flex-col items-center justify-between pb-4">
+                                                                <div className="text-orange-600 font-black text-lg pt-2">{card.id}</div>
+                                                                <div className="text-5xl">🔮</div>
+                                                                <div className="font-black text-emerald-900">{card.name.split(' ')[0]}</div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className={`absolute inset-0 rounded-2xl bg-white border-[3px] border-orange-400 p-4 [backface-visibility:hidden] [transform:rotateY(180deg)] text-emerald-950 ${card.isReversed ? 'rotate-180' : ''}`}>
-                                                        <div className="w-full h-full border border-emerald-100 rounded-lg flex flex-col items-center">
-                                                            <div className="text-orange-600 font-black pt-2">{card.id}</div>
-                                                            <div className="flex-1 flex items-center text-4xl">🔮</div>
-                                                            <div className="pb-4 font-black text-center text-lg">{card.name.split(' ')[0]}</div>
+                                                </div>
+
+                                                <div className={`mt-8 w-full transition-all duration-500 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                                    <div className="bg-white text-emerald-950 rounded-2xl p-5 shadow-2xl border-l-[6px] border-orange-400 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <h4 className="font-black text-lg">{card.name}</h4>
+                                                            <span className={`text-xs px-2 py-0.5 rounded font-bold ${card.isReversed ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                {card.isReversed ? '逆位置' : '正位置'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-orange-900 bg-orange-50 p-2.5 rounded-lg mb-4 border border-orange-100">
+                                                            {card.isReversed ? card.keywordRev : card.keywordUp}
+                                                        </p>
+                                                        <div className="text-sm space-y-3 whitespace-pre-wrap">
+                                                            {(card.isReversed ? card.descRev : card.descUp).split('\n').map((t, i) => (
+                                                                <p key={i} className={t.startsWith('【') ? 'font-bold text-emerald-900 pt-2' : ''}>{t}</p>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {flippedCards[index] && (
-                                                <div className="mt-8 bg-white text-emerald-950 rounded-2xl p-6 shadow-2xl border-l-[6px] border-orange-400 animate-fade-in">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <h4 className="font-black text-xl">{card.name}</h4>
-                                                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${card.isReversed ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                            {card.isReversed ? '逆位置' : '正位置'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm font-bold text-orange-700 bg-orange-50 p-2 rounded mb-3">
-                                                        {card.isReversed ? card.keywordRev : card.keywordUp}
-                                                    </p>
-                                                    <p className="text-sm leading-relaxed font-medium">{card.desc}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
